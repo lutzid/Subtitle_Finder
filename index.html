@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>Subtitle Finder</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.1/css/bootstrap.min.css" integrity="sha384-VCmXjywReHh4PwowAiWNagnWcLhlEJLA5buUprzK8rxFgeH0kww/aWY76TfkUoSX" crossorigin="anonymous">
+    <link rel="icon" href="./assets/search.png" type="image/x-icon">
+</head>
+<body>
+    <header class="mb-5">
+        <nav>
+          <ul>
+            <li>SubtitleFinder</li>
+          </ul>
+        </nav>
+        <h1 style="text-align: center;" >Welcome to Subtitle Finder</h1>
+    </header>
+    <section id="app" class="row d-flex justify-content-center">
+        <section class="col-8">
+            <section class="min-vw-50">
+                <section style="margin: 0 auto; display: block; text-align: center;">
+                    <section class="input-group mb-3 px-5">
+                        <input type="text" class="form-control" v-model="url" placeholder="Youtube Link">
+                    </section>
+                    <section class="input-group mb-3 px-5">
+                        <input type="text" class="form-control" v-model="keyword" placeholder="Keyword">
+                        <section class="input-group-append">
+                            <button type="button" class="btn btn-outline-secondary" id="button-addon2" @click="clear">Clear</button>
+                        </section>
+                    </section>
+                </section>
+                <section class="d-flex justify-content-around mb-3">
+                    <button type="button" class="btn btn-secondary" @click="navigation('first')" :disabled="!pagination['first']">
+                        First
+                    </button>
+                    <button type="button" class="btn btn-secondary" @click="navigation('prev')" :disabled="!pagination['prev']">
+                        Prev
+                    </button>
+                    <button type="button" class="btn btn-secondary" @click="navigation('next')" :disabled="!pagination['next']">
+                        Next
+                    </button>
+                    <button type="button" class="btn btn-secondary" @click="navigation('last')" :disabled="!pagination['last']">
+                        Last
+                    </button>
+                </section>
+
+                <section class="d-flex justify-content-between mb-3 px-5">
+                    <section>Total Result: {{ pagination.total }}</section>
+                    <section>Page: {{ pageView }}</section>
+                </section>
+
+                <section class="mb-3">
+                    <img width="" v-bind:src="'https://img.youtube.com/vi/' + video_id + '/maxresdefault.jpg'">
+                </section>
+            </section>
+            <table class="table table-hover">
+                <tr>
+                    <th>Start</th>
+                    <th>End</th>
+                    <th>Text</th>
+                    <th>Link</th>
+                </tr>
+                <tr v-for="(result, i) in result" :key="i">
+                    <td>{{secondsConverter(result.start)}}</td>
+                    <td>{{secondsConverter(result.end)}}</td>
+                    <td v-html="result.text"></td>
+                    <td><a :href="`${url}&t=${result.start}s`" target="_blank">Youtube</a></td>
+                </tr>
+                <tr v-if="!result || result.length === 0">
+                    <td colspan="4" style="text-align: center;">
+                        Result Not Found
+                    </td>
+                </tr>
+            </table>
+        </section>
+    </section>
+    <footer>
+        <p class="alignLeft">Created by Zidan Lutfi</p>
+    </footer>
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <script src="./utils/index.js"></script>
+    <script>
+        new Vue ({
+            el: '#app',
+            data: {
+                url: '',
+                keyword: '',
+                result: [],
+                pagination: {
+                    first: null,
+                    last: null,
+                    prev: null,
+                    next: null,
+                    total: 0,
+                    page: null
+                },
+                video_id: ''
+            },
+            watch: {
+                keyword: pDebounce(async function keywordHandler(keyword) {
+                    if (keyword && keyword.length >= 3) {
+                        await this.search(keyword, this.url)
+                        this.getVideoId()
+                    } else {
+                        this.clearResultandPagination()
+                    }
+                }, 250)
+            },
+            computed: {
+                pageView () {
+                    return this.pagination.page ? this.pagination.page : 0
+                }
+            },
+            methods: {
+                async search (keyword, url, pagination) {
+                    try {
+                        const response = await fetch (
+                            pagination 
+                                ? pagination 
+                                : `https://cari-teks-video-api.vercel.app/api/search?q=${keyword}&url=${encodeURIComponent(url)}`
+                        ).then(res => (
+                            res.ok ? res.json() : []
+                        ))
+
+                        const { data: result, first, last, prev, next, total, page } = response
+
+                        this.result = result
+                        this.pagination.first = first
+                        this.pagination.last = last
+                        this.pagination.prev = prev
+                        this.pagination.next =  next
+                        this.pagination.total = total
+                        this.pagination.page = page
+
+                    } catch (error) {
+
+                    }
+                },
+                async navigation (type) {
+                    if (!this.pagination[type]) {
+                        return
+                    }
+                    await this.search(this.keyword, this.url, this.pagination[type])
+                },
+                clear () {
+                    this.keyword = '',
+                    this.clearResultandPagination()
+                },
+                clearResultandPagination () {
+                    this.result = [],
+                    this.pagination = {
+                        first: null,
+                        last: null,
+                        prev: null,
+                        next: null,
+                        total: 0,
+                        page: null
+                    }
+                },
+                secondsConverter (timestamp) {
+                    let hours = Math.floor(timestamp / 60 / 60);
+                    let minutes = Math.floor(timestamp / 60) - (hours * 60);
+                    let seconds = timestamp % 60;
+
+                    if (hours < 10) hours = '0' + hours;
+                    if (minutes < 10) minutes = '0' + minutes;
+                    if (seconds < 10) seconds = '0' + seconds;
+
+                    return hours + ':' + minutes + ':' + seconds
+                },
+                getVideoId () {
+                    let video_id = this.url.split('v=')[1]
+                    var ampersandPosition = video_id.indexOf('&');
+                    if(ampersandPosition != -1) {
+                        video_id = video_id.substring(0, ampersandPosition);
+                    }
+
+                    this.video_id = video_id
+                }
+            }
+        })
+    </script>
+</body>
+</html>
