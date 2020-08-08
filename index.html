@@ -172,13 +172,9 @@
                     return hours + ':' + minutes + ':' + seconds
                 },
                 getVideoId () {
-                    let video_id = this.url.split('v=')[1]
-                    var ampersandPosition = video_id.indexOf('&');
-                    if(ampersandPosition != -1) {
-                        video_id = video_id.substring(0, ampersandPosition);
-                    }
+                    let video_id = this.url.match(/(?:https?:\/{2})?(?:w{3}\.)?youtu(?:be)?\.(?:com|be)(?:\/watch\?v=|\/)([^\s&]+)/)
 
-                    this.video_id = video_id
+                    this.video_id = video_id[1]
                 }
             }
         })
