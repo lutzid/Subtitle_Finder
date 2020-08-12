@@ -64,8 +64,8 @@
                     <th>Link</th>
                 </tr>
                 <tr v-for="(result, i) in result" :key="i">
-                    <td>{{secondsConverter(result.start)}}</td>
-                    <td>{{secondsConverter(result.end)}}</td>
+                    <td>{{ secondsConverter(result.start) }}</td>
+                    <td>{{ secondsConverter(result.end) }}</td>
                     <td v-html="result.text"></td>
                     <td><a :href="`${url}&t=${result.start}s`" target="_blank">Youtube</a></td>
                 </tr>
@@ -112,6 +112,18 @@
             computed: {
                 pageView () {
                     return this.pagination.page ? this.pagination.page : 0
+                },
+                secondsConverter () {
+                    return (timestamp) => {
+                        let hours = Math.floor(timestamp / 60 / 60);
+                        let minutes = Math.floor(timestamp / 60) - (hours * 60);
+                        let seconds = timestamp % 60;
+
+                        if (hours < 10) hours = '0' + hours;
+                        if (minutes < 10) minutes = '0' + minutes;
+                        if (seconds < 10) seconds = '0' + seconds;
+
+                        return hours + ':' + minutes + ':' + seconds
                 }
             },
             methods: {
@@ -159,17 +171,6 @@
                         total: 0,
                         page: null
                     }
-                },
-                secondsConverter (timestamp) {
-                    let hours = Math.floor(timestamp / 60 / 60);
-                    let minutes = Math.floor(timestamp / 60) - (hours * 60);
-                    let seconds = timestamp % 60;
-
-                    if (hours < 10) hours = '0' + hours;
-                    if (minutes < 10) minutes = '0' + minutes;
-                    if (seconds < 10) seconds = '0' + seconds;
-
-                    return hours + ':' + minutes + ':' + seconds
                 },
                 getVideoId () {
                     let video_id = this.url.match(/(?:https?:\/{2})?(?:w{3}\.)?youtu(?:be)?\.(?:com|be)(?:\/watch\?v=|\/)([^\s&]+)/)
